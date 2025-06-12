@@ -60,6 +60,50 @@ public class AvaliacaoDAO implements BaseDAO {
         return null;
     }
 
+    public ArrayList<Avaliacao> buscarPorFilmeId(int filmeId) {
+        ArrayList<Avaliacao> avaliacoes = new ArrayList<>();
+        String sql = "SELECT * FROM avaliacoes WHERE filme_id = ?";
+        try (PreparedStatement pstm = connection.prepareStatement(sql)) {
+            pstm.setInt(1, filmeId);
+            try (ResultSet rs = pstm.executeQuery()) {
+                while (rs.next()) {
+                    Avaliacao a = new Avaliacao();
+                    a.setId(rs.getInt("id"));
+                    a.setUsuarioId(rs.getInt("usuario_id"));
+                    a.setFilmeId(rs.getInt("filme_id"));
+                    a.setNota(rs.getInt("nota"));
+                    a.setComentario(rs.getString("comentario"));
+                    avaliacoes.add(a);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao buscar avaliações por filme: " + e.getMessage(), e);
+        }
+        return avaliacoes;
+    }
+
+    public ArrayList<Avaliacao> buscarPorUsuarioId(int usuarioId) {
+        ArrayList<Avaliacao> avaliacoes = new ArrayList<>();
+        String sql = "SELECT * FROM avaliacoes WHERE usuario_id = ?";
+        try (PreparedStatement pstm = connection.prepareStatement(sql)) {
+            pstm.setInt(1, usuarioId);
+            try (ResultSet rs = pstm.executeQuery()) {
+                while (rs.next()) {
+                    Avaliacao a = new Avaliacao();
+                    a.setId(rs.getInt("id"));
+                    a.setUsuarioId(rs.getInt("usuario_id"));
+                    a.setFilmeId(rs.getInt("filme_id"));
+                    a.setNota(rs.getInt("nota"));
+                    a.setComentario(rs.getString("comentario"));
+                    avaliacoes.add(a);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao buscar avaliações por usuário: " + e.getMessage(), e);
+        }
+        return avaliacoes;
+    }
+
     public double getMediaDeNotasPorFilme(int filmeId) {
         String sql = "SELECT AVG(nota) as media FROM avaliacoes WHERE filme_id = ?";
         try (PreparedStatement pstm = connection.prepareStatement(sql)) {
@@ -145,7 +189,10 @@ public class AvaliacaoDAO implements BaseDAO {
         String sql = "DELETE FROM avaliacoes WHERE id = ?";
         try (PreparedStatement pstm = connection.prepareStatement(sql)) {
             pstm.setInt(1, id);
-            pstm.execute();
+            int linhasAfetadas = pstm.executeUpdate(); // Correção: usar executeUpdate()
+            if (linhasAfetadas == 0) {
+                System.out.println("Aviso: Nenhuma avaliação encontrada com o ID " + id + " para excluir.");
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao excluir avaliação: " + e.getMessage(), e);
         }
