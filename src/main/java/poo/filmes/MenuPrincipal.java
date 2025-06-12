@@ -4,6 +4,8 @@ import dao.AvaliacaoDAO;
 import dao.Conexao;
 import dao.FilmeDAO;
 import dao.UsuarioDAO;
+import modelo.Avaliacao;
+import modelo.Filme;
 import modelo.Usuario;
 
 import java.sql.Connection;
@@ -11,18 +13,15 @@ import java.util.Scanner;
 
 public class MenuPrincipal {
 
-    // DAOs que serão utilizados em toda a classe
     private static UsuarioDAO usuarioDAO;
     private static FilmeDAO filmeDAO;
     private static AvaliacaoDAO avaliacaoDAO;
 
     public static void main(String[] args) {
-        // requisito: conexão com banco relacional via jdbc
         Connection conn = Conexao.conectar();
         usuarioDAO = new UsuarioDAO(conn);
         filmeDAO = new FilmeDAO(conn);
         avaliacaoDAO = new AvaliacaoDAO(conn);
-
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -31,7 +30,6 @@ public class MenuPrincipal {
             System.out.println("2. Cadastrar Novo Usuário");
             System.out.println("3. Sair");
             System.out.print("Escolha uma opção: ");
-
             int opcao = lerOpcao(scanner);
 
             switch (opcao) {
@@ -45,9 +43,9 @@ public class MenuPrincipal {
                     System.out.println("Saindo do sistema... Até logo!");
                     fecharConexao(conn);
                     scanner.close();
-                    return; // Encerra o programa
+                    return;
                 default:
-                    System.out.println("Opção inválida. Por favor, tente novamente.");
+                    System.out.println("Opção inválida.");
                     break;
             }
         }
@@ -64,7 +62,6 @@ public class MenuPrincipal {
 
         if (usuarioLogado != null) {
             System.out.println("\nLogin bem-sucedido! Bem-vindo(a), " + usuarioLogado.getNome() + "!");
-            // Chama o menu de usuário logado
             menuUsuarioLogado(usuarioLogado, scanner);
         } else {
             System.out.println("\nEmail ou senha inválidos. Tente novamente.");
@@ -80,10 +77,8 @@ public class MenuPrincipal {
         System.out.print("Crie uma senha: ");
         String senhaCadastro = scanner.nextLine();
 
-        // requisito: abstração - modelagem adequada das entidades
         Usuario novoUsuario = new Usuario(0, nomeCadastro, emailCadastro, senhaCadastro);
         try {
-            // requisito: uso obrigatório do padrão dao para persistência de dados
             usuarioDAO.salvar(novoUsuario);
             System.out.println("Usuário '" + novoUsuario.getNome() + "' cadastrado com sucesso!");
         } catch (RuntimeException e) {
@@ -91,54 +86,108 @@ public class MenuPrincipal {
         }
     }
 
-    // Menu principal para usuários que já fizeram login
     private static void menuUsuarioLogado(Usuario usuario, Scanner scanner) {
         while (true) {
             System.out.println("\n--- MENU PRINCIPAL ---");
             System.out.println("1. Procurar Filme");
             System.out.println("2. Cadastrar Novo Filme");
-            System.out.println("3. Visualizar Meus Reviews");
-            System.out.println("4. Fazer Logout (Voltar ao menu inicial)");
+            System.out.println("3. Fazer Logout");
             System.out.print("Escolha uma opção: ");
-
             int opcao = lerOpcao(scanner);
 
             switch (opcao) {
                 case 1:
-                    // Lógica para procurar, visualizar, avaliar e editar/excluir review de um filme
-                    System.out.println("// Lógica para PROCURAR FILME aqui...");
+                    procurarFilme(usuario, scanner);
                     break;
                 case 2:
-                    // Lógica para cadastrar um novo filme
-                    System.out.println("// Lógica para CADASTRAR NOVO FILME aqui...");
+                    cadastrarNovoFilme(scanner);
                     break;
                 case 3:
-                    // Lógica para visualizar os reviews feitos pelo usuário
-                    System.out.println("// Lógica para VISUALIZAR MEUS REVIEWS aqui...");
-                    break;
-                case 4:
                     System.out.println("Fazendo logout...");
-                    return; // Retorna para o menu de login/cadastro
+                    return;
                 default:
-                    System.out.println("Opção inválida. Tente novamente.");
+                    System.out.println("Opção inválida.");
                     break;
             }
         }
     }
 
-    // Função utilitária para ler a opção do usuário e validar a entrada
+    private static void procurarFilme(Usuario usuario, Scanner scanner) {
+        System.out.println("\n--- PROCURAR FILME ---");
+        System.out.print("Digite o título do filme: ");
+        String titulo = scanner.nextLine();
+
+        Filme filme = filmeDAO.buscarPorTitulo(titulo);
+
+        if (filme != null) {
+            double media = avaliacaoDAO.getMediaDeNotasPorFilme(filme.getId());
+
+            System.out.println("\n--- FILME ENCONTRADO ---");
+            System.out.printf("Título: %s (Ano: %d)\n", filme.getTitulo(), filme.getAno());
+            System.out.printf("Média de Notas: %.1f / 10\n", media);
+
+            System.out.print("\nDeseja avaliar este filme? (S/N): ");
+            String resposta = scanner.nextLine();
+
+            if (resposta.equalsIgnoreCase("S")) {
+                avaliarFilme(filme, usuario, scanner);
+            }
+        } else {
+            System.out.println("Filme não encontrado.");
+            System.out.print("Deseja cadastrá-lo agora? (S/N): ");
+            String resposta = scanner.nextLine();
+            if (resposta.equalsIgnoreCase("S")) {
+                cadastrarNovoFilme(scanner);
+            }
+        }
+    }
+
+    private static void avaliarFilme(Filme filme, Usuario usuario, Scanner scanner) {
+        System.out.println("\n--- AVALIAR: " + filme.getTitulo() + " ---");
+        System.out.print("Sua nota (de 0 a 10): ");
+        int nota = lerOpcao(scanner);
+
+        System.out.print("Seu comentário (opcional, pressione Enter para pular): ");
+        String comentario = scanner.nextLine();
+
+        Avaliacao novaAvaliacao = new Avaliacao(0, usuario.getId(), filme.getId(), nota, comentario);
+        try {
+            avaliacaoDAO.salvar(novaAvaliacao);
+            System.out.println("Avaliação registrada com sucesso!");
+        } catch (RuntimeException e) {
+            System.err.println("Erro ao salvar avaliação: " + e.getMessage());
+        }
+    }
+
+    private static void cadastrarNovoFilme(Scanner scanner) {
+        System.out.println("\n--- CADASTRO DE NOVO FILME ---");
+        System.out.print("Título do filme: ");
+        String titulo = scanner.nextLine();
+        System.out.print("Ano de lançamento: ");
+        int ano = lerOpcao(scanner);
+        System.out.print("Gênero: ");
+        String genero = scanner.nextLine();
+
+        Filme novoFilme = new Filme(0, titulo, ano, genero);
+        try {
+            filmeDAO.salvar(novoFilme);
+            System.out.println("Filme '" + novoFilme.getTitulo() + "' cadastrado com sucesso!");
+        } catch (RuntimeException e) {
+            System.err.println("Erro ao cadastrar filme: " + e.getMessage());
+        }
+    }
+
     private static int lerOpcao(Scanner scanner) {
         while (!scanner.hasNextInt()) {
             System.out.println("Entrada inválida. Por favor, digite um número.");
-            scanner.next(); // Descarta a entrada inválida
+            scanner.next();
             System.out.print("Escolha uma opção: ");
         }
         int opcao = scanner.nextInt();
-        scanner.nextLine(); // Limpa o buffer
+        scanner.nextLine();
         return opcao;
     }
 
-    // Função utilitária para fechar a conexão com o banco de dados
     private static void fecharConexao(Connection conn) {
         try {
             if (conn != null && !conn.isClosed()) {

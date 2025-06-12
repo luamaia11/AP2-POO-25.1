@@ -18,7 +18,7 @@ public class Avaliacao {
         this.comentario = comentario;
     }
 
-    // getters e setters
+    // requisito: encapsulamento - uso apropriado de modificadores de acesso
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     public int getUsuarioId() { return usuarioId; }
