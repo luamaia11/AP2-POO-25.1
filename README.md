@@ -23,7 +23,7 @@
 3. **Importação do Projeto:**
    - Clone o repositório:
      ```bash
-     git clone <URL_DO_REPOSITORIO>
+     git clone <https://github.com/luamaia11/AP2-POO-25.1.git>
      ```
    - Importe como projeto Maven em sua IDE.
 
