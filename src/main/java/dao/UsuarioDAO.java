@@ -1,8 +1,7 @@
 package dao;
 
-import modelo.Usuario;
-
 import java.sql.*;
+import modelo.Usuario;
 import java.util.ArrayList;
 
 // Requisito: Uso obrigatório do padrão DAO
