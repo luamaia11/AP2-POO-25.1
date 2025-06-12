@@ -249,7 +249,10 @@ public class MenuPrincipal {
         int ano = lerOpcao(scanner);
         System.out.print("Gênero: ");
         String genero = scanner.nextLine();
-        Filme novoFilme = new Filme(0, titulo, ano, genero);
+
+        // Usando o novo construtor sobrecarregado (mais limpo, sem o ID '0')
+        Filme novoFilme = new Filme(titulo, ano, genero);
+
         try {
             filmeDAO.salvar(novoFilme);
             System.out.println("Filme '" + novoFilme.getTitulo() + "' cadastrado com sucesso!");
